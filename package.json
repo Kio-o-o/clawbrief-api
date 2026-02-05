@@ -1,0 +1,34 @@
+{
+  "name": "clawbrief-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node src/server.js",
+    "build": "npx prisma generate",
+    "start": "node src/server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@fastify/multipart": "^9.4.0",
+    "@fastify/rate-limit": "^10.3.0",
+    "@mozilla/readability": "^0.6.0",
+    "@prisma/client": "6.16.1",
+    "@sentry/node": "^10.38.0",
+    "dotenv": "^17.2.3",
+    "fastify": "^5.7.4",
+    "ioredis": "^5.9.2",
+    "jsdom": "^28.0.0",
+    "jsonrepair": "^3.13.2",
+    "nanoid": "^5.1.6",
+    "pdf-parse": "^2.4.5",
+    "prisma": "6.16.1",
+    "prom-client": "^15.1.3",
+    "sharp": "^0.34.5",
+    "undici": "^7.20.0",
+    "zod": "^4.3.6"
+  }
+}

@@ -1,0 +1,8 @@
+node_modules/
+data/store.json
+.env
+
+# local notes
+*.log
+
+/src/generated/prisma

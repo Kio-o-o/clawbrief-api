@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UsageEventType {
+  CHARGE
+  TOPUP
+}
+
+enum TopupStatus {
+  PENDING
+  CONFIRMED
+  CANCELED
+}
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  name        String
+  keyHash     String   @unique
+  credits     Int      @default(0)
+  disabled    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  lastUsedAt  DateTime?
+
+  usageEvents UsageEvent[]
+  invoices    TopupInvoice[]
+
+  @@index([createdAt])
+}
+
+model UsageEvent {
+  id        String         @id @default(cuid())
+  type      UsageEventType
+  apiKeyId  String
+  apiKey    ApiKey         @relation(fields: [apiKeyId], references: [id])
+  cost      Int
+  endpoint  String?
+  sourceKind String?
+  mimetype  String?
+  bytes     Int?
+  pages     Int?
+  textChars Int?
+  pixels    Int?
+  meta      Json?
+  createdAt DateTime       @default(now())
+
+  @@index([apiKeyId, createdAt])
+}
+
+model TopupInvoice {
+  id         String      @id @default(cuid())
+  invoiceRef String      @unique
+  apiKeyId   String
+  apiKey     ApiKey      @relation(fields: [apiKeyId], references: [id])
+  chain      String
+  asset      String
+  units      Decimal     @db.Decimal(36, 18)
+  credits    Int
+  memo       String
+  status     TopupStatus @default(PENDING)
+  txHash     String?
+  createdAt  DateTime    @default(now())
+  confirmedAt DateTime?
+
+  @@index([apiKeyId, createdAt])
+  @@index([status, createdAt])
+}
