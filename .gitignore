@@ -5,4 +5,6 @@ data/store.json
 # local notes
 *.log
 
+deploy/render-env.actual.txt
+
 /src/generated/prisma

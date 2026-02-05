@@ -1,0 +1,30 @@
+# Render Environment Variables (example)
+# DO NOT COMMIT real secrets. Paste into Render dashboard.
+
+ENVIRONMENT=production
+NODE_ENV=production
+PORT=10000
+
+# Database
+DATABASE_URL=postgres://USER:PASSWORD@HOST:PORT/DB
+
+# LLM
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-2.5-flash
+
+# Payments (SOL USDT)
+CRYPTO_PAY_ADDRESS=9zaSjsreoEM8BLkZazB4dRnXcgfuDY2aM6mK2CppAXwq
+CREDITS_PER_USD=100
+MIN_TOPUP_USD=5
+
+# Admin + Monitoring
+ADMIN_TOKEN=__REPLACE__
+METRICS_TOKEN=__REPLACE__
+
+# Sentry
+SENTRY_DSN=...
+SENTRY_TRACES_SAMPLE_RATE=0.05
+
+# Metrics scraping
+# Use:
+#   Authorization: Bearer <METRICS_TOKEN>
