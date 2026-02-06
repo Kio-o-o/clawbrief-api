@@ -1,27 +1,27 @@
 # ClawBrief API
 
-Turn text / URLs / PDFs / images (OCR) into a stable, agent-friendly JSON payload:
+A paid API that turns text / URLs / PDFs / images (OCR) into a stable, agent-friendly JSON payload:
 - `summary`
 - `bullets`
 - `todos`
 - `tags`
 - `risk_flags`
 
-## Status
-- Production base URL: **https://clawbrief-api.onrender.com**
+**Base URL:** https://clawbrief-api.onrender.com
+
+## Pricing (credits)
+- Credits are deducted per request.
+- Current topup rate (v0): **$1 ≈ 100 credits** (USDT/USDC on Solana)
+
+## Get an API key
+This is a paid API. To get an API key and pricing details, contact the operator.
+
+(If you're the operator, see `docs/admin.md`.)
 
 ## Quickstart
 ### Health
 ```bash
 curl -sS https://clawbrief-api.onrender.com/healthz
-```
-
-### Create an API key (admin)
-```bash
-curl -sS https://clawbrief-api.onrender.com/v1/admin/keys \
-  -H "X-Admin-Token: <ADMIN_TOKEN>" \
-  -H "content-type: application/json" \
-  -d '{"name":"customer1","credits":200}'
 ```
 
 ### Brief: text
@@ -47,11 +47,10 @@ curl -sS https://clawbrief-api.onrender.com/v1/brief \
   -F "file=@./sample.pdf"
 ```
 
-## Billing
-- Paid endpoints require: `Authorization: Bearer <apiKey>`
-- Responses include:
-  - `billing.cost`
-  - `billing.credits_remaining`
+## Billing behavior
+Responses include:
+- `billing.cost`
+- `billing.credits_remaining`
 
 Credits are size-aware (so a 50k-page PDF won’t cost the same as a 3-page PDF):
 - text: `1 + floor(max(0, chars-4000)/4000)`
@@ -60,34 +59,14 @@ Credits are size-aware (so a 50k-page PDF won’t cost the same as a 3-page PDF)
 - image: `2 + floor(max(0, megapixels-2)/2)`
 
 ## Topups (USDT/USDC on Solana)
-### Create invoice
-```bash
-curl -sS https://clawbrief-api.onrender.com/v1/topup/create \
-  -H "Authorization: Bearer <apiKey>" \
-  -H "content-type: application/json" \
-  -d '{"units":5,"chain":"SOL","asset":"USDT"}'
-```
+- Create invoice: `POST /v1/topup/create`
+- Auto-confirm: supported via webhook (Helius)
 
-### Auto-confirm (webhook)
-This service supports automatic crediting via Helius webhook.
-See: `deploy/helius.md`
-
-### Manual confirm (admin)
-If needed:
-```bash
-curl -sS https://clawbrief-api.onrender.com/v1/topup/confirm \
-  -H "X-Admin-Token: <ADMIN_TOKEN>" \
-  -H "content-type: application/json" \
-  -d '{"invoiceId":"inv_...","txHash":"..."}'
-```
+Operator docs:
+- `deploy/helius.md`
 
 ## Monitoring
-### Metrics
-`/metrics` is protected by `METRICS_TOKEN`:
-```bash
-curl -sS https://clawbrief-api.onrender.com/metrics \
-  -H "Authorization: Bearer <METRICS_TOKEN>"
-```
+`/metrics` is protected by `METRICS_TOKEN`.
 
 ## Security notes
 - Never commit `.env`.
