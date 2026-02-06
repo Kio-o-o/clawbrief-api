@@ -1,8 +1,10 @@
-// Load .env explicitly from project root (so it works even when started elsewhere)
-require('dotenv').config({
-  path: require('node:path').join(__dirname, '..', '.env'),
-  override: true,
-});
+// Load .env explicitly for local dev only. In production (Render), rely on process.env.
+if ((process.env.NODE_ENV || '').toLowerCase() !== 'production' && (process.env.ENVIRONMENT || '').toLowerCase() !== 'production') {
+  require('dotenv').config({
+    path: require('node:path').join(__dirname, '..', '.env'),
+    override: false,
+  });
+}
 
 const path = require('node:path');
 const fs = require('node:fs/promises');
@@ -463,6 +465,8 @@ async function main() {
 }
 
 main().catch((err) => {
-  app.log.error(err);
+  try { app.log.error(err); } catch {}
+  // Ensure Render deploy logs include the actual error
+  console.error(err);
   process.exit(1);
 });
