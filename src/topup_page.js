@@ -34,6 +34,7 @@ function renderTopupPage({ baseUrl }) {
   <div class="card">
     <div class="row">
       <label>API Key<br><input id="apiKey" placeholder="cb_..." size="42" /></label>
+      <span class="muted" style="align-self:end">(saved in this browser)</span>
       <label>Asset<br>
         <select id="asset">
           <option value="USDT">USDT</option>
@@ -51,6 +52,7 @@ function renderTopupPage({ baseUrl }) {
 
 <script>
 const baseUrl = ${JSON.stringify(baseUrl)};
+const LS_KEY = 'clawbrief_apiKey';
 
 function setErr(s){
   document.getElementById('err').textContent = s || '';
@@ -100,9 +102,20 @@ async function pollInvoice(apiKey, invoiceRef, out) {
   }
 }
 
+// Prefill apiKey from localStorage
+try {
+  const saved = localStorage.getItem(LS_KEY);
+  if (saved) document.getElementById('apiKey').value = saved;
+} catch {}
+
+document.getElementById('apiKey').addEventListener('change', () => {
+  try { localStorage.setItem(LS_KEY, document.getElementById('apiKey').value.trim()); } catch {}
+});
+
 document.getElementById('btnCreate').addEventListener('click', async () => {
   setErr('');
   const apiKey = document.getElementById('apiKey').value.trim();
+  try { localStorage.setItem(LS_KEY, apiKey); } catch {}
   const asset = document.getElementById('asset').value;
   const units = Number(document.getElementById('units').value);
   if (!apiKey) return setErr('Missing API key');

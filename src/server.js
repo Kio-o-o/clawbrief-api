@@ -32,7 +32,9 @@ const app = Fastify({ logger: true });
 const { registerTopupRoutes } = require('./topup_routes');
 const { registerTopupWebhookRoutes } = require('./topup_webhook');
 const { registerTopupPublicRoutes } = require('./topup_public_routes');
+const { registerPublicKeysRoutes } = require('./public_keys_routes');
 const { renderTopupPage, qrDataUrl } = require('./topup_page');
+const { renderSignupPage } = require('./signup_page');
 
 initSentry(app);
 registerMonitoringRoutes(app);
@@ -236,12 +238,19 @@ function focusAcademicText(text) {
 registerTopupRoutes(app);
 registerTopupWebhookRoutes(app);
 registerTopupPublicRoutes(app);
+registerPublicKeysRoutes(app);
 
 // Minimal topup page (no auth; user pastes apiKey in browser)
 app.get('/topup', async (req, reply) => {
   const baseUrl = process.env.PUBLIC_BASE_URL || 'https://clawbrief-api.onrender.com';
   reply.header('content-type', 'text/html; charset=utf-8');
   return renderTopupPage({ baseUrl });
+});
+
+app.get('/signup', async (req, reply) => {
+  const baseUrl = process.env.PUBLIC_BASE_URL || 'https://clawbrief-api.onrender.com';
+  reply.header('content-type', 'text/html; charset=utf-8');
+  return renderSignupPage({ baseUrl });
 });
 
 app.get('/topup/qr', async (req, reply) => {
