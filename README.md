@@ -1,88 +1,97 @@
 # ClawBrief API
 
-把文字 / URL / PDF / 圖片（OCR）整理成固定格式：summary + bullets + todos + tags + risk_flags。
+Turn text / URLs / PDFs / images (OCR) into a stable, agent-friendly JSON payload:
+- `summary`
+- `bullets`
+- `todos`
+- `tags`
+- `risk_flags`
 
-Deploy target: Render + Postgres + Sentry + Grafana Cloud.
+## Status
+- Production base URL: **https://clawbrief-api.onrender.com**
 
-## Prereqs
-- Node.js 18+
-- Windows: Tesseract OCR
-  - 目前預設路徑：`C:\Program Files\Tesseract-OCR\tesseract.exe`
-
-## Run
+## Quickstart
+### Health
 ```bash
-cd D:\Kio\projects\clawbrief-api
-npm i
-npm run dev
-# listens on http://127.0.0.1:8787
+curl -sS https://clawbrief-api.onrender.com/healthz
 ```
 
-## API
-### Auth
-All paid endpoints require:
-- `Authorization: Bearer <apiKey>`
-
-### Topups (Crypto, manual-confirm MVP)
-- Create invoice: `POST /v1/topup/create` (requires API key)
-- Confirm invoice: `POST /v1/topup/confirm` (requires `X-Admin-Token`)
-
-Quick scripts:
+### Create an API key (admin)
 ```bash
-node scripts/test_topup.js <apiKey>           # creates a USDT(SOL) invoice by default
-node scripts/confirm_topup.js <invoiceId> <txHash> <adminToken>
+curl -sS https://clawbrief-api.onrender.com/v1/admin/keys \
+  -H "X-Admin-Token: <ADMIN_TOKEN>" \
+  -H "content-type: application/json" \
+  -d '{"name":"customer1","credits":200}'
 ```
 
-This is an MVP that lets you accept USDC/USDT by transfer and manually confirm the txHash to credit the account.
-
-Create a local test key:
+### Brief: text
 ```bash
-node scripts/create_key.js local 200
+curl -sS https://clawbrief-api.onrender.com/v1/brief \
+  -H "Authorization: Bearer <apiKey>" \
+  -H "content-type: application/json" \
+  -d '{"text":"..."}'
 ```
 
-Check credits:
+### Brief: URL
 ```bash
-curl -s http://127.0.0.1:8787/v1/usage \
-  -H "Authorization: Bearer <apiKey>"
+curl -sS https://clawbrief-api.onrender.com/v1/brief \
+  -H "Authorization: Bearer <apiKey>" \
+  -H "content-type: application/json" \
+  -d '{"url":"https://example.com"}'
 ```
 
-### Credits
+### Brief: file (PDF / image)
+```bash
+curl -sS https://clawbrief-api.onrender.com/v1/brief \
+  -H "Authorization: Bearer <apiKey>" \
+  -F "file=@./sample.pdf"
+```
+
+## Billing
+- Paid endpoints require: `Authorization: Bearer <apiKey>`
+- Responses include:
+  - `billing.cost`
+  - `billing.credits_remaining`
+
 Credits are size-aware (so a 50k-page PDF won’t cost the same as a 3-page PDF):
 - text: `1 + floor(max(0, chars-4000)/4000)`
 - url:  `2 + floor(max(0, chars-6000)/6000)`
 - pdf:  `2 + floor((pages-1)/5) + floor(max(0, extractedChars-10000)/10000)`
 - image: `2 + floor(max(0, megapixels-2)/2)`
 
-### GET /healthz
-
-### POST /v1/brief
-支援兩種輸入型態：
-
-1) JSON（text 或 url 二選一）
+## Topups (USDT/USDC on Solana)
+### Create invoice
 ```bash
-curl -s http://127.0.0.1:8787/v1/brief \
+curl -sS https://clawbrief-api.onrender.com/v1/topup/create \
   -H "Authorization: Bearer <apiKey>" \
   -H "content-type: application/json" \
-  -d '{"text":"..."}'
-
-curl -s http://127.0.0.1:8787/v1/brief \
-  -H "Authorization: Bearer <apiKey>" \
-  -H "content-type: application/json" \
-  -d '{"url":"https://example.com"}'
+  -d '{"units":5,"chain":"SOL","asset":"USDT"}'
 ```
 
-2) multipart/form-data（file）
+### Auto-confirm (webhook)
+This service supports automatic crediting via Helius webhook.
+See: `deploy/helius.md`
+
+### Manual confirm (admin)
+If needed:
 ```bash
-curl -s http://127.0.0.1:8787/v1/brief \
-  -H "Authorization: Bearer <apiKey>" \
-  -F "file=@./sample.pdf"
-
-curl -s http://127.0.0.1:8787/v1/brief \
-  -H "Authorization: Bearer <apiKey>" \
-  -F "file=@./sample.png"
+curl -sS https://clawbrief-api.onrender.com/v1/topup/confirm \
+  -H "X-Admin-Token: <ADMIN_TOKEN>" \
+  -H "content-type: application/json" \
+  -d '{"invoiceId":"inv_...","txHash":"..."}'
 ```
 
-## LLM
-- 如果你有設定 `OPENAI_API_KEY`，會走 OpenAI Responses API 產生繁中摘要/待辦。
-- 沒有 key 的情況下，會用 heuristic 先頂著（可用於內測 pipeline）。
+## Monitoring
+### Metrics
+`/metrics` is protected by `METRICS_TOKEN`:
+```bash
+curl -sS https://clawbrief-api.onrender.com/metrics \
+  -H "Authorization: Bearer <METRICS_TOKEN>"
+```
 
-你之後想要接 OpenClaw 同款模型的官方路徑，我們可以再把 provider 抽成 plug-in（或直接用你既有的金鑰/代理）。
+## Security notes
+- Never commit `.env`.
+- Never paste API keys / admin tokens into public issues.
+
+## Development
+Local dev notes: `docs/dev.md`
