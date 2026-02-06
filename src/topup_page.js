@@ -1,51 +1,38 @@
 const QRCode = require('qrcode');
-
-function esc(s) {
-  return String(s || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+const { pageShell, esc } = require('./ui_shared');
 
 function renderTopupPage({ baseUrl }) {
-  return `<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ClawBrief Topup</title>
-  <style>
-    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 24px; max-width: 880px; }
-    input, select, button { font-size: 16px; padding: 10px; }
-    code { background: #f4f4f5; padding: 2px 6px; border-radius: 6px; }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-top: 16px; }
-    .muted { color: #6b7280; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-    .danger { color: #b91c1c; }
-  </style>
-</head>
-<body>
-  <h1>ClawBrief Topup</h1>
-  <p class="muted">Create an invoice and pay with USDT/USDC on Solana. Use the memo when possible.</p>
+  const body = `
+  <div class="h1">Top up credits</div>
+  <p class="p">Create an invoice and pay with USDT/USDC on Solana. Use the memo when possible.</p>
 
   <div class="card">
     <div class="row">
-      <label>API Key<br><input id="apiKey" placeholder="cb_..." size="42" /></label>
-      <span class="muted" style="align-self:end">(saved in this browser)</span>
-      <label>Asset<br>
+      <div style="flex:1; min-width:360px">
+        <div class="label">API Key</div>
+        <input class="input mono" id="apiKey" placeholder="cb_..." />
+        <div class="small" style="margin-top:6px">Saved in this browser.</div>
+      </div>
+
+      <div style="min-width:160px">
+        <div class="label">Asset</div>
         <select id="asset">
           <option value="USDT">USDT</option>
           <option value="USDC">USDC</option>
         </select>
-      </label>
-      <label>Amount<br><input id="units" type="number" min="1" step="1" value="5" style="width:120px" /></label>
-      <button id="btnCreate">Create invoice</button>
+      </div>
+
+      <div style="min-width:140px">
+        <div class="label">Amount</div>
+        <input class="input" id="units" type="number" min="1" step="1" value="5" style="max-width:160px" />
+      </div>
+
+      <button class="btn btn-primary" id="btnCreate">Create invoice</button>
+      <a class="btn" href="/dashboard">Dashboard</a>
     </div>
-    <p class="muted">Base URL: <code>${esc(baseUrl)}</code></p>
-    <p id="err" class="danger"></p>
+
+    <div class="small" style="margin-top:10px">Base URL: <span class="mono">${esc(baseUrl)}</span></div>
+    <div id="err" class="danger" style="margin-top:10px"></div>
   </div>
 
   <div id="out" class="card" style="display:none"></div>
@@ -81,7 +68,7 @@ function el(tag, attrs={}, children=[]) {
   return e;
 }
 
-async function pollInvoice(apiKey, invoiceRef, out) {
+async function pollInvoice(apiKey, invoiceRef) {
   while (true) {
     await new Promise(r => setTimeout(r, 2500));
     try {
@@ -93,7 +80,7 @@ async function pollInvoice(apiKey, invoiceRef, out) {
       badge.textContent = inv.status;
       if (inv.status === 'CONFIRMED') {
         const p = document.getElementById('statusMsg');
-        p.textContent = 'Confirmed. Credits should be available now.';
+        p.textContent = 'Confirmed. Credits are now available.';
         break;
       }
     } catch (e) {
@@ -102,24 +89,34 @@ async function pollInvoice(apiKey, invoiceRef, out) {
   }
 }
 
-// Prefill apiKey from localStorage
-try {
-  const saved = localStorage.getItem(LS_KEY);
-  if (saved) document.getElementById('apiKey').value = saved;
-} catch {}
+function loadKey(){
+  try { return localStorage.getItem(LS_KEY) || ''; } catch { return ''; }
+}
+function saveKey(k){
+  try { localStorage.setItem(LS_KEY, k); } catch {}
+}
+
+// init
+const saved = loadKey();
+if (saved) document.getElementById('apiKey').value = saved;
 
 document.getElementById('apiKey').addEventListener('change', () => {
-  try { localStorage.setItem(LS_KEY, document.getElementById('apiKey').value.trim()); } catch {}
+  saveKey(document.getElementById('apiKey').value.trim());
 });
+
+if (!saved) {
+  setErr('No API key saved in this browser. Create one at /signup first.');
+}
 
 document.getElementById('btnCreate').addEventListener('click', async () => {
   setErr('');
   const apiKey = document.getElementById('apiKey').value.trim();
-  try { localStorage.setItem(LS_KEY, apiKey); } catch {}
   const asset = document.getElementById('asset').value;
   const units = Number(document.getElementById('units').value);
-  if (!apiKey) return setErr('Missing API key');
+  if (!apiKey) return setErr('Missing API key (create one at /signup)');
   if (!units || units <= 0) return setErr('Invalid amount');
+
+  saveKey(apiKey);
 
   const out = document.getElementById('out');
   out.style.display = 'none';
@@ -140,63 +137,72 @@ document.getElementById('btnCreate').addEventListener('click', async () => {
 
     const wrap = el('div');
     wrap.appendChild(el('h2', { text: 'Invoice' }));
-
     wrap.appendChild(el('p', { html: 'Status: <b id="statusBadge">'+inv.status+'</b>' }));
-    wrap.appendChild(el('p', { id: 'statusMsg', class: 'muted', text: 'Waiting for payment…' }));
+    wrap.appendChild(el('p', { id: 'statusMsg', class: 'small', text: 'Waiting for payment…' }));
 
     wrap.appendChild(el('p', { html: 'Send <b>'+inv.units+' '+inv.asset+'</b> on <b>'+inv.chain+'</b> to:' }));
     wrap.appendChild(el('p', { class: 'mono', text: payTo.address }));
 
     wrap.appendChild(el('p', { html: 'Memo (recommended): <span class="mono">'+inv.memo+'</span>' }));
 
-    // QR (two options)
-    // 1) Address-only QR (works everywhere)
-    // 2) Solana Pay URI (amount + spl-token) (wallet support varies)
-
+    // Address QR
     const qr = el('img');
     qr.style.maxWidth = '260px';
-    qr.style.border = '1px solid #e5e7eb';
+    qr.style.border = '1px solid rgba(255,255,255,.12)';
     qr.style.borderRadius = '12px';
     qr.style.padding = '8px';
-
-    // fetch qr from server helper endpoint
-    // Address QR
     const qrResp = await api('/topup/qr?text=' + encodeURIComponent(payTo.address), {});
     qr.src = qrResp.dataUrl;
-    wrap.appendChild(qr);
 
-    // Solana Pay URI QR (best-effort)
+    // Solana Pay URI QR (amount + token) (wallet support varies)
     const mintMap = {
       'USDT': 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
       'USDC': 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
     };
     const mint = mintMap[String(inv.asset||'').toUpperCase()];
+
+    const grid = el('div');
+    grid.className = 'grid2';
+
+    const left = el('div');
+    left.appendChild(el('div', { class: 'small', text: 'Address QR' }));
+    left.appendChild(qr);
+
+    const right = el('div');
+    right.appendChild(el('div', { class: 'small', text: 'Solana Pay QR (amount + token) — optional' }));
+
     if (mint) {
       const uri = 'solana:' + payTo.address + '?amount=' + encodeURIComponent(inv.units) + '&spl-token=' + encodeURIComponent(mint);
       const qr2 = el('img');
       qr2.style.maxWidth = '260px';
-      qr2.style.border = '1px solid #e5e7eb';
+      qr2.style.border = '1px solid rgba(255,255,255,.12)';
       qr2.style.borderRadius = '12px';
       qr2.style.padding = '8px';
       const qr2Resp = await api('/topup/qr?text=' + encodeURIComponent(uri), {});
       qr2.src = qr2Resp.dataUrl;
-      wrap.appendChild(el('p', { class: 'muted', text: 'Optional: Solana Pay QR (amount + token). You may still need to paste the memo manually.' }));
-      wrap.appendChild(qr2);
+      right.appendChild(qr2);
+      right.appendChild(el('p', { class: 'small', text: 'You may still need to paste the memo manually.' }));
+    } else {
+      right.appendChild(el('p', { class: 'small', text: 'Unsupported asset for Solana Pay QR.' }));
     }
 
-    wrap.appendChild(el('p', { class: 'muted', text: 'Tip: if your wallet supports memo/notes, paste the memo exactly.' }));
+    grid.appendChild(left);
+    grid.appendChild(right);
+    wrap.appendChild(grid);
+
+    wrap.appendChild(el('p', { class: 'small', text: 'Tip: if your wallet supports memo/notes, paste the memo exactly.' }));
 
     out.appendChild(wrap);
     out.style.display = 'block';
 
-    pollInvoice(apiKey, inv.invoiceRef || inv.id || inv.invoiceRef, out);
+    pollInvoice(apiKey, inv.invoiceRef || inv.id || inv.invoiceRef);
   } catch (e) {
     setErr(e.message);
   }
 });
-</script>
-</body>
-</html>`;
+</script>`;
+
+  return pageShell({ title: 'ClawBrief Topup', current: 'topup', body });
 }
 
 async function qrDataUrl(text) {

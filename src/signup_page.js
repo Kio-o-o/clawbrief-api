@@ -1,43 +1,23 @@
-function esc(s) {
-  return String(s || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+const { pageShell, esc } = require('./ui_shared');
 
 function renderSignupPage({ baseUrl }) {
-  return `<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ClawBrief Signup</title>
-  <style>
-    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 24px; max-width: 880px; }
-    input, button { font-size: 16px; padding: 10px; }
-    code { background: #f4f4f5; padding: 2px 6px; border-radius: 6px; }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-top: 16px; }
-    .muted { color: #6b7280; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-    .danger { color: #b91c1c; }
-    .ok { color: #065f46; }
-  </style>
-</head>
-<body>
-  <h1>Get an API Key</h1>
-  <p class="muted">This creates a new API key with <b>0 credits</b>. You can top up after creation.</p>
+  const body = `
+  <div class="h1">Get an API key</div>
+  <p class="p">Create a new API key with <b>0 credits</b>. We store it in this browser (localStorage) and you can download a backup.</p>
 
   <div class="card">
     <div class="row">
-      <label>Name (optional)<br><input id="name" placeholder="my-bot" size="22" /></label>
-      <button id="btn">Create API key</button>
+      <div style="flex:1; min-width:220px">
+        <div class="label">Name (optional)</div>
+        <input class="input" id="name" placeholder="my-bot" />
+      </div>
+      <button class="btn btn-primary" id="btn">Create API key</button>
+      <a class="btn" href="/topup">Topup</a>
+      <a class="btn" href="/dashboard">Dashboard</a>
     </div>
-    <p class="muted">Base URL: <code>${esc(baseUrl)}</code></p>
-    <p id="msg" class="muted"></p>
-    <p id="err" class="danger"></p>
+    <div class="small" style="margin-top:10px">Base URL: <span class="mono">${esc(baseUrl)}</span></div>
+    <div id="msg" class="small" style="margin-top:10px"></div>
+    <div id="err" class="danger" style="margin-top:8px"></div>
   </div>
 
   <div id="out" class="card" style="display:none"></div>
@@ -76,9 +56,8 @@ async function solvePow(id, difficulty) {
     const n = String(nonce++);
     const h = await sha256Hex(id + '.' + n);
     if (h.startsWith(prefix)) return { nonce: n, tookMs: Date.now()-start };
-    if (nonce % 200 === 0) {
+    if (nonce % 250 === 0) {
       setMsg('Solving PoW… tried ' + nonce + ' nonces');
-      // yield
       await new Promise(r=>setTimeout(r, 0));
     }
   }
@@ -107,7 +86,7 @@ document.getElementById('btn').addEventListener('click', async () => {
     const c = await api('/v1/public/pow', {});
     const token = c.challenge.token;
     const id = c.challenge.id;
-    const difficulty = Number(c.challenge.difficulty || 4);
+    const difficulty = Number(c.challenge.difficulty || 3);
 
     if (!id) throw new Error('Missing challenge id');
 
@@ -122,7 +101,7 @@ document.getElementById('btn').addEventListener('click', async () => {
     });
 
     const key = created.key.apiKey;
-    localStorage.setItem(LS_KEY, key);
+    try { localStorage.setItem(LS_KEY, key); } catch {}
 
     out.appendChild(Object.assign(document.createElement('h2'), { textContent: 'Your API key' }));
     const p = document.createElement('p');
@@ -134,25 +113,34 @@ document.getElementById('btn').addEventListener('click', async () => {
     row.className='row';
 
     const btnCopy = document.createElement('button');
+    btnCopy.className='btn';
     btnCopy.textContent='Copy';
     btnCopy.onclick = async () => { await navigator.clipboard.writeText(key); setMsg('Copied.'); };
 
     const btnDl = document.createElement('button');
+    btnDl.className='btn';
     btnDl.textContent='Download backup';
     btnDl.onclick = () => downloadText('clawbrief_apikey.txt', key + "\\n");
 
-    const btnTopup = document.createElement('button');
+    const btnTopup = document.createElement('a');
+    btnTopup.className='btn';
     btnTopup.textContent='Go to Topup';
-    btnTopup.onclick = () => { window.location.href = '/topup'; };
+    btnTopup.href = '/topup';
+
+    const btnDash = document.createElement('a');
+    btnDash.className='btn';
+    btnDash.textContent='Go to Dashboard';
+    btnDash.href = '/dashboard';
 
     row.appendChild(btnCopy);
     row.appendChild(btnDl);
     row.appendChild(btnTopup);
+    row.appendChild(btnDash);
     out.appendChild(row);
 
     const tip = document.createElement('p');
-    tip.className='muted';
-    tip.textContent = 'This key is saved in this browser (localStorage). Also keep a backup.';
+    tip.className='small';
+    tip.textContent = 'Saved in this browser (localStorage). Also keep a backup.';
     out.appendChild(tip);
 
     out.style.display='block';
@@ -161,9 +149,9 @@ document.getElementById('btn').addEventListener('click', async () => {
     setErr(e.message);
   }
 });
-</script>
-</body>
-</html>`;
+</script>`;
+
+  return pageShell({ title: 'ClawBrief Signup', current: 'signup', body });
 }
 
 module.exports = { renderSignupPage };

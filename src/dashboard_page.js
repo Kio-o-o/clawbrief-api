@@ -1,45 +1,23 @@
-function esc(s) {
-  return String(s || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+const { pageShell, esc } = require('./ui_shared');
 
 function renderDashboardPage({ baseUrl }) {
-  return `<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ClawBrief Dashboard</title>
-  <style>
-    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 24px; max-width: 980px; }
-    input, button { font-size: 16px; padding: 10px; }
-    code { background: #f4f4f5; padding: 2px 6px; border-radius: 6px; }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-top: 16px; }
-    .muted { color: #6b7280; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-    .danger { color: #b91c1c; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; font-size: 14px; }
-  </style>
-</head>
-<body>
-  <h1>ClawBrief Dashboard</h1>
-  <p class="muted">Check your credits and recent usage. API key is stored in this browser.</p>
+  const body = `
+  <div class="h1">Dashboard</div>
+  <p class="p">Check your credits and recent usage. API key is stored in this browser.</p>
 
   <div class="card">
     <div class="row">
-      <label>API Key<br><input id="apiKey" placeholder="cb_..." size="46" /></label>
-      <button id="btnSave">Save</button>
-      <button id="btnRefresh">Refresh</button>
-      <a href="/topup" style="align-self:end">Topup</a>
+      <div style="flex:1; min-width:360px">
+        <div class="label">API Key</div>
+        <input class="input mono" id="apiKey" placeholder="cb_..." />
+        <div class="small" style="margin-top:6px">Saved in this browser.</div>
+      </div>
+      <button class="btn" id="btnSave">Save</button>
+      <button class="btn btn-primary" id="btnRefresh">Refresh</button>
+      <a class="btn" href="/topup">Topup</a>
     </div>
-    <p class="muted">Base URL: <code>${esc(baseUrl)}</code></p>
-    <p id="err" class="danger"></p>
+    <div class="small" style="margin-top:10px">Base URL: <span class="mono">${esc(baseUrl)}</span></div>
+    <div id="err" class="danger" style="margin-top:10px"></div>
   </div>
 
   <div id="summary" class="card" style="display:none"></div>
@@ -87,6 +65,7 @@ function renderUsage(data){
   rec.appendChild(Object.assign(document.createElement('h2'), { textContent: 'Recent events' }));
 
   const t = document.createElement('table');
+  t.className='table';
   const thead = document.createElement('thead');
   thead.innerHTML = '<tr><th>Time</th><th>Type</th><th>Cost</th><th>Endpoint</th></tr>';
   t.appendChild(thead);
@@ -108,7 +87,7 @@ function renderUsage(data){
 async function refresh(){
   setErr('');
   const apiKey = document.getElementById('apiKey').value.trim();
-  if (!apiKey) return setErr('Missing API key');
+  if (!apiKey) return setErr('Missing API key (create one at /signup)');
   saveKey(apiKey);
 
   const data = await api('/v1/usage', { headers: { 'Authorization': 'Bearer ' + apiKey } });
@@ -118,6 +97,7 @@ async function refresh(){
 // init
 const saved = loadKey();
 if (saved) document.getElementById('apiKey').value = saved;
+else setErr('No API key saved in this browser. Create one at /signup first.');
 
 document.getElementById('btnSave').addEventListener('click', () => {
   saveKey(document.getElementById('apiKey').value.trim());
@@ -128,9 +108,9 @@ document.getElementById('btnRefresh').addEventListener('click', () => {
 });
 
 if (saved) refresh().catch(()=>{});
-</script>
-</body>
-</html>`;
+</script>`;
+
+  return pageShell({ title: 'ClawBrief Dashboard', current: 'dashboard', body });
 }
 
 module.exports = { renderDashboardPage };
