@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: clawbrief-api
+    runtime: node
+    plan: starter
+    region: singapore
+    buildCommand: npm ci
+    startCommand: npm run start:render
+    healthCheckPath: /healthz
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: NODE_ENV
+        value: production
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: CREDITS_PER_USD
+        value: "100"
+      - key: MIN_TOPUP_USD
+        value: "5"
+      - key: CRYPTO_PAY_ADDRESS
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ADMIN_TOKEN
+        sync: false
+      - key: METRICS_TOKEN
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: SENTRY_TRACES_SAMPLE_RATE
+        value: "0.05"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: clawbrief-db
+          property: connectionString
+
+databases:
+  - name: clawbrief-db
+    plan: starter
+    region: singapore

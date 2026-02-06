@@ -407,7 +407,8 @@ app.post('/v1/brief', { config: { rateLimit: true } }, async (req, reply) => {
 });
 
 async function main() {
-  const host = process.env.HOST || '127.0.0.1';
+  const { isProd } = require('./config');
+  const host = process.env.HOST || (isProd() ? '0.0.0.0' : '127.0.0.1');
   const port = Number(process.env.PORT || 8787);
   await app.listen({ host, port });
 }
