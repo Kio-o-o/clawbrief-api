@@ -1,9 +1,9 @@
-const { pageShell, esc } = require('./ui_shared');
+const { pageShell } = require('./ui_shared');
 
 function renderSignupPage({ baseUrl }) {
   const body = `
   <div class="h1">Get an API key</div>
-  <p class="p">Create a new API key with <b>0 credits</b>. We store it in this browser (localStorage) and you can download a backup.</p>
+  <p class="p">Create a new API key with <b>0 credits</b>. It is stored in this browser and you can download a backup.</p>
 
   <div class="card">
     <div class="row">
@@ -12,10 +12,7 @@ function renderSignupPage({ baseUrl }) {
         <input class="input" id="name" placeholder="my-bot" />
       </div>
       <button class="btn btn-primary" id="btn">Create API key</button>
-      <a class="btn" href="/topup">Topup</a>
-      <a class="btn" href="/dashboard">Dashboard</a>
     </div>
-    <div class="small" style="margin-top:10px">Base URL: <span class="mono">${esc(baseUrl)}</span></div>
     <div id="msg" class="small" style="margin-top:10px"></div>
     <div id="err" class="danger" style="margin-top:8px"></div>
   </div>
@@ -122,26 +119,9 @@ document.getElementById('btn').addEventListener('click', async () => {
     btnDl.textContent='Download backup';
     btnDl.onclick = () => downloadText('clawbrief_apikey.txt', key + "\\n");
 
-    const btnTopup = document.createElement('a');
-    btnTopup.className='btn';
-    btnTopup.textContent='Go to Topup';
-    btnTopup.href = '/topup';
-
-    const btnDash = document.createElement('a');
-    btnDash.className='btn';
-    btnDash.textContent='Go to Dashboard';
-    btnDash.href = '/dashboard';
-
     row.appendChild(btnCopy);
     row.appendChild(btnDl);
-    row.appendChild(btnTopup);
-    row.appendChild(btnDash);
     out.appendChild(row);
-
-    const tip = document.createElement('p');
-    tip.className='small';
-    tip.textContent = 'Saved in this browser (localStorage). Also keep a backup.';
-    out.appendChild(tip);
 
     out.style.display='block';
     setMsg('Done.');

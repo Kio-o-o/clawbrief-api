@@ -3,19 +3,16 @@ const { pageShell, esc } = require('./ui_shared');
 function renderDashboardPage({ baseUrl }) {
   const body = `
   <div class="h1">Dashboard</div>
-  <p class="p">Check your credits and recent usage. API key is stored in this browser.</p>
+  <p class="p">Check your credits and recent usage.</p>
 
   <div class="card">
     <div class="row">
       <div style="flex:1; min-width:360px">
         <div class="label">API Key</div>
         <input class="input mono" id="apiKey" placeholder="cb_..." />
-        <div class="small" style="margin-top:6px">Saved locally in this browser (localStorage). To switch key, paste a new one.</div>
       </div>
       <button class="btn btn-primary" id="btnRefresh">Refresh</button>
-      <a class="btn" href="/topup">Topup</a>
     </div>
-    <div class="small" style="margin-top:10px">Base URL: <span class="mono">${esc(baseUrl)}</span></div>
     <div id="err" class="danger" style="margin-top:10px"></div>
   </div>
 
@@ -98,7 +95,6 @@ const saved = loadKey();
 if (saved) document.getElementById('apiKey').value = saved;
 else setErr('No API key saved in this browser. Create one at /signup first.');
 
-// Save key on change
 document.getElementById('apiKey').addEventListener('change', () => {
   saveKey(document.getElementById('apiKey').value.trim());
 });

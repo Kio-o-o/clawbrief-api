@@ -11,7 +11,6 @@ function renderTopupPage({ baseUrl }) {
       <div>
         <div class="label">API Key</div>
         <input class="input mono" id="apiKey" placeholder="cb_..." />
-        <div class="small" style="margin-top:6px">Saved locally in this browser (localStorage).</div>
       </div>
 
       <div>
@@ -29,11 +28,9 @@ function renderTopupPage({ baseUrl }) {
 
       <div class="row" style="justify-content:flex-end">
         <button class="btn btn-primary" id="btnCreate">Create invoice</button>
-        <a class="btn" href="/dashboard">Dashboard</a>
       </div>
     </div>
 
-    <div class="small" style="margin-top:10px">Base URL: <span class="mono">${esc(baseUrl)}</span></div>
     <div id="err" class="danger" style="margin-top:10px"></div>
   </div>
 
@@ -101,14 +98,11 @@ function saveKey(k){
 // init
 const saved = loadKey();
 if (saved) document.getElementById('apiKey').value = saved;
+else setErr('No API key saved in this browser. Create one at /signup first.');
 
 document.getElementById('apiKey').addEventListener('change', () => {
   saveKey(document.getElementById('apiKey').value.trim());
 });
-
-if (!saved) {
-  setErr('No API key saved in this browser. Create one at /signup first.');
-}
 
 document.getElementById('btnCreate').addEventListener('click', async () => {
   setErr('');
@@ -191,8 +185,6 @@ document.getElementById('btnCreate').addEventListener('click', async () => {
     grid.appendChild(left);
     grid.appendChild(right);
     wrap.appendChild(grid);
-
-    wrap.appendChild(el('p', { class: 'small', text: 'Tip: if your wallet supports memo/notes, paste the memo exactly.' }));
 
     out.appendChild(wrap);
     out.style.display = 'block';
