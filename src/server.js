@@ -19,6 +19,8 @@ const { detectRiskFlags } = require('./risk');
 const { makeBrief } = require('./llm');
 const { requireAdmin } = require('./admin');
 const { registerMonitoringRoutes } = require('./monitoring_routes');
+const { initSentry } = require('./sentry');
+const { httpRequestDuration, creditsCharged } = require('./metrics');
 
 // Billing backend: DB when DATABASE_URL is set; otherwise file-store for local dev.
 const billingDb = require('./billing_db');
@@ -29,7 +31,19 @@ const { parseAuth, getApiKeyRow } = require('./auth');
 const app = Fastify({ logger: true });
 const { registerTopupRoutes } = require('./topup_routes');
 
+initSentry(app);
 registerMonitoringRoutes(app);
+
+// metrics: request duration
+app.addHook('onRequest', async (req) => {
+  req._startAt = process.hrtime.bigint();
+});
+app.addHook('onResponse', async (req, reply) => {
+  if (!req._startAt) return;
+  const sec = Number(process.hrtime.bigint() - req._startAt) / 1e9;
+  const route = req.routerPath || req.url;
+  httpRequestDuration.labels(req.method, route, String(reply.statusCode)).observe(sec);
+});
 
 // Rate limit (per key): protects costs.
 const rateLimit = require('@fastify/rate-limit');
@@ -316,6 +330,9 @@ app.post('/v1/brief', { config: { rateLimit: true } }, async (req, reply) => {
     reply.code(402);
     return { error: charged.error, credits: charged.credits };
   }
+
+  // metrics
+  creditsCharged.labels(String(source?.kind || 'unknown'), String(source?.mimetype || '')).inc(cost);
 
   const risk_flags = detectRiskFlags(rawText);
 
