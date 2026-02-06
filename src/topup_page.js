@@ -7,14 +7,14 @@ function renderTopupPage({ baseUrl }) {
   <p class="p">Create an invoice and pay with USDT/USDC on Solana. Use the memo when possible.</p>
 
   <div class="card">
-    <div class="row">
-      <div style="flex:1; min-width:360px">
+    <div class="form-grid">
+      <div>
         <div class="label">API Key</div>
         <input class="input mono" id="apiKey" placeholder="cb_..." />
         <div class="small" style="margin-top:6px">Saved in this browser.</div>
       </div>
 
-      <div style="min-width:160px">
+      <div>
         <div class="label">Asset</div>
         <select id="asset">
           <option value="USDT">USDT</option>
@@ -22,13 +22,15 @@ function renderTopupPage({ baseUrl }) {
         </select>
       </div>
 
-      <div style="min-width:140px">
+      <div>
         <div class="label">Amount</div>
-        <input class="input" id="units" type="number" min="1" step="1" value="5" style="max-width:160px" />
+        <input class="input" id="units" type="number" min="1" step="1" value="5" />
       </div>
 
-      <button class="btn btn-primary" id="btnCreate">Create invoice</button>
-      <a class="btn" href="/dashboard">Dashboard</a>
+      <div class="row" style="justify-content:flex-end">
+        <button class="btn btn-primary" id="btnCreate">Create invoice</button>
+        <a class="btn" href="/dashboard">Dashboard</a>
+      </div>
     </div>
 
     <div class="small" style="margin-top:10px">Base URL: <span class="mono">${esc(baseUrl)}</span></div>
