@@ -68,6 +68,24 @@ app.register(multipart, {
 
 app.get('/healthz', async () => ({ ok: true }));
 
+// Admin: create API keys (DB mode only)
+app.post('/v1/admin/keys', async (req, reply) => {
+  const deny = requireAdmin(req, reply);
+  if (deny) return deny;
+
+  if (!useDb()) {
+    reply.code(400);
+    return { ok: false, error: 'db_required', message: 'Set DATABASE_URL to use admin key management.' };
+  }
+
+  const body = req.body || {};
+  const name = String(body.name || 'customer').slice(0, 80);
+  const credits = Number(body.credits ?? 0);
+
+  const k = await billingDb.createKey({ name, credits });
+  return { ok: true, key: { id: k.id, name: k.name, credits: k.credits, apiKey: k.plaintextKey, created_at: k.createdAt } };
+});
+
 app.get('/v1/usage', { config: { rateLimit: { max: 120, timeWindow: 10 * 60 * 1000 } } }, async (req, reply) => {
   const plaintext = parseAuth(req);
   if (!plaintext) {
