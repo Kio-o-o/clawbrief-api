@@ -18,6 +18,12 @@ enum TopupStatus {
   CANCELED
 }
 
+enum PaymentStatus {
+  UNMATCHED
+  MATCHED
+  IGNORED
+}
+
 model ApiKey {
   id          String   @id @default(cuid())
   name        String
@@ -53,20 +59,39 @@ model UsageEvent {
 }
 
 model TopupInvoice {
-  id         String      @id @default(cuid())
-  invoiceRef String      @unique
-  apiKeyId   String
-  apiKey     ApiKey      @relation(fields: [apiKeyId], references: [id])
-  chain      String
-  asset      String
-  units      Decimal     @db.Decimal(36, 18)
-  credits    Int
-  memo       String
-  status     TopupStatus @default(PENDING)
-  txHash     String?
-  createdAt  DateTime    @default(now())
+  id          String      @id @default(cuid())
+  invoiceRef  String      @unique
+  apiKeyId    String
+  apiKey      ApiKey      @relation(fields: [apiKeyId], references: [id])
+  chain       String
+  asset       String
+  units       Decimal     @db.Decimal(36, 18)
+  credits     Int
+  memo        String
+  status      TopupStatus @default(PENDING)
+  txHash      String?     @unique
+  createdAt   DateTime    @default(now())
   confirmedAt DateTime?
 
   @@index([apiKeyId, createdAt])
   @@index([status, createdAt])
+  @@index([chain, asset, createdAt])
+}
+
+model Payment {
+  id         String        @id @default(cuid())
+  chain      String
+  asset      String
+  mint       String
+  toAddress  String
+  amount     Decimal       @db.Decimal(36, 18)
+  txHash     String        @unique
+  status     PaymentStatus @default(UNMATCHED)
+  invoiceRef String?
+  raw        Json?
+  seenAt     DateTime      @default(now())
+
+  @@index([status, seenAt])
+  @@index([chain, asset, toAddress, seenAt])
+  @@index([invoiceRef])
 }

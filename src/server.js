@@ -30,6 +30,7 @@ const { parseAuth, getApiKeyRow } = require('./auth');
 
 const app = Fastify({ logger: true });
 const { registerTopupRoutes } = require('./topup_routes');
+const { registerTopupWebhookRoutes } = require('./topup_webhook');
 
 initSentry(app);
 registerMonitoringRoutes(app);
@@ -231,6 +232,7 @@ function focusAcademicText(text) {
 }
 
 registerTopupRoutes(app);
+registerTopupWebhookRoutes(app);
 
 app.post('/v1/brief', { config: { rateLimit: true } }, async (req, reply) => {
   const plaintext = parseAuth(req);

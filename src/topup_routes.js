@@ -89,7 +89,7 @@ function registerTopupRoutes(app) {
       instructions: [
         `Send ${built.invoice.units} ${built.invoice.asset} on ${built.invoice.chain} to the payTo.address.`,
         `Put this memo in the transfer if possible: ${built.invoice.memo}`,
-        'Then ask the admin to confirm the invoice with the txHash.',
+        'If you cannot set a memo, the payment may require manual matching.',
       ],
     };
   });
