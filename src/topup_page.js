@@ -11,7 +11,7 @@ function renderTopupPage({ baseUrl }) {
       <div>
         <div class="label">API Key</div>
         <input class="input mono" id="apiKey" placeholder="cb_..." />
-        <div class="small" style="margin-top:6px">Saved in this browser.</div>
+        <div class="small" style="margin-top:6px">Saved locally in this browser (localStorage).</div>
       </div>
 
       <div>

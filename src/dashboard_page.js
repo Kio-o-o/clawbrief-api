@@ -10,9 +10,8 @@ function renderDashboardPage({ baseUrl }) {
       <div style="flex:1; min-width:360px">
         <div class="label">API Key</div>
         <input class="input mono" id="apiKey" placeholder="cb_..." />
-        <div class="small" style="margin-top:6px">Saved in this browser.</div>
+        <div class="small" style="margin-top:6px">Saved locally in this browser (localStorage). To switch key, paste a new one.</div>
       </div>
-      <button class="btn" id="btnSave">Save</button>
       <button class="btn btn-primary" id="btnRefresh">Refresh</button>
       <a class="btn" href="/topup">Topup</a>
     </div>
@@ -99,7 +98,8 @@ const saved = loadKey();
 if (saved) document.getElementById('apiKey').value = saved;
 else setErr('No API key saved in this browser. Create one at /signup first.');
 
-document.getElementById('btnSave').addEventListener('click', () => {
+// Save key on change
+document.getElementById('apiKey').addEventListener('change', () => {
   saveKey(document.getElementById('apiKey').value.trim());
 });
 
