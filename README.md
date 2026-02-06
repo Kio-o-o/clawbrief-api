@@ -14,9 +14,16 @@ A paid API that turns text / URLs / PDFs / images (OCR) into a stable, agent-fri
 - Current topup rate (v0): **$1 ≈ 100 credits** (USDT/USDC on Solana)
 
 ## Get an API key
-This is a paid API. To get an API key and pricing details, contact the operator.
+Self-serve:
+- https://clawbrief-api.onrender.com/signup
 
-(If you're the operator, see `docs/admin.md`.)
+Buy credits:
+- https://clawbrief-api.onrender.com/topup
+
+Check balance:
+- https://clawbrief-api.onrender.com/dashboard
+
+(Operator docs: `docs/admin.md`)
 
 ## Quickstart
 ### Health

@@ -149,9 +149,9 @@ document.getElementById('btnCreate').addEventListener('click', async () => {
 
     wrap.appendChild(el('p', { html: 'Memo (recommended): <span class="mono">'+inv.memo+'</span>' }));
 
-    // QR: solana pay URL (best-effort)
-    const solanaPay = 'solana:' + payTo.address + '?amount=' + encodeURIComponent(inv.units) + '&spl-token=' + encodeURIComponent(inv.asset);
-    // Note: not all wallets support parameters. This is still helpful as an address QR.
+    // QR (two options)
+    // 1) Address-only QR (works everywhere)
+    // 2) Solana Pay URI (amount + spl-token) (wallet support varies)
 
     const qr = el('img');
     qr.style.maxWidth = '260px';
@@ -160,9 +160,29 @@ document.getElementById('btnCreate').addEventListener('click', async () => {
     qr.style.padding = '8px';
 
     // fetch qr from server helper endpoint
+    // Address QR
     const qrResp = await api('/topup/qr?text=' + encodeURIComponent(payTo.address), {});
     qr.src = qrResp.dataUrl;
     wrap.appendChild(qr);
+
+    // Solana Pay URI QR (best-effort)
+    const mintMap = {
+      'USDT': 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
+      'USDC': 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
+    };
+    const mint = mintMap[String(inv.asset||'').toUpperCase()];
+    if (mint) {
+      const uri = 'solana:' + payTo.address + '?amount=' + encodeURIComponent(inv.units) + '&spl-token=' + encodeURIComponent(mint);
+      const qr2 = el('img');
+      qr2.style.maxWidth = '260px';
+      qr2.style.border = '1px solid #e5e7eb';
+      qr2.style.borderRadius = '12px';
+      qr2.style.padding = '8px';
+      const qr2Resp = await api('/topup/qr?text=' + encodeURIComponent(uri), {});
+      qr2.src = qr2Resp.dataUrl;
+      wrap.appendChild(el('p', { class: 'muted', text: 'Optional: Solana Pay QR (amount + token). You may still need to paste the memo manually.' }));
+      wrap.appendChild(qr2);
+    }
 
     wrap.appendChild(el('p', { class: 'muted', text: 'Tip: if your wallet supports memo/notes, paste the memo exactly.' }));
 
