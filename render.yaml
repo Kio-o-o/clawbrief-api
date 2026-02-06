@@ -2,7 +2,7 @@ services:
   - type: web
     name: clawbrief-api
     runtime: node
-    plan: starter
+    plan: free
     region: singapore
     buildCommand: npm ci
     startCommand: npm run start:render
