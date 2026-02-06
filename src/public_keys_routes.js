@@ -10,7 +10,7 @@ function registerPublicKeysRoutes(app) {
       const difficulty = Number(process.env.POW_DIFFICULTY || 4);
       const ttlMs = Number(process.env.POW_TTL_MS || 2 * 60 * 1000);
       const c = makeChallenge({ difficulty, ttlMs });
-      return { ok: true, challenge: { token: c.token, difficulty: c.difficulty, expires_at: new Date(c.exp).toISOString() } };
+      return { ok: true, challenge: { token: c.token, id: c.id, difficulty: c.difficulty, expires_at: new Date(c.exp).toISOString() } };
     } catch (e) {
       reply.code(500);
       return { ok: false, error: 'pow_not_configured' };

@@ -106,14 +106,13 @@ document.getElementById('btn').addEventListener('click', async () => {
     setMsg('Requesting challenge…');
     const c = await api('/v1/public/pow', {});
     const token = c.challenge.token;
+    const id = c.challenge.id;
     const difficulty = Number(c.challenge.difficulty || 4);
 
-    // decode id from token (payload is base64url JSON)
-    const body = token.split('.')[0];
-    const payload = JSON.parse(atob(body.replace(/-/g,'+').replace(/_/g,'/')));
+    if (!id) throw new Error('Missing challenge id');
 
     setMsg('Solving PoW…');
-    const solved = await solvePow(payload.id, difficulty);
+    const solved = await solvePow(id, difficulty);
 
     setMsg('Creating key…');
     const created = await api('/v1/public/keys', {
