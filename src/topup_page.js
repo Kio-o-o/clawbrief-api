@@ -68,18 +68,33 @@ function el(tag, attrs={}, children=[]) {
 }
 
 async function pollInvoice(apiKey, invoiceRef) {
+  let waitMs = 2500;
+  const maxWaitMs = 15000;
+  const startedAt = Date.now();
+  const maxTotalMs = 30 * 60 * 1000; // stop after 30 minutes
+
   while (true) {
-    await new Promise(r => setTimeout(r, 2500));
+    await new Promise(r => setTimeout(r, waitMs));
+
+    // backoff (reduce load if user keeps tab open)
+    waitMs = Math.min(maxWaitMs, Math.floor(waitMs * 1.6));
+
+    if (Date.now() - startedAt > maxTotalMs) {
+      const p = document.getElementById('statusMsg');
+      if (p) p.textContent = 'Still pending. You can refresh later.';
+      break;
+    }
+
     try {
       const st = await api('/v1/topup/invoice/' + encodeURIComponent(invoiceRef), {
         headers: { 'Authorization': 'Bearer ' + apiKey }
       });
       const inv = st.invoice;
       const badge = document.getElementById('statusBadge');
-      badge.textContent = inv.status;
+      if (badge) badge.textContent = inv.status;
       if (inv.status === 'CONFIRMED') {
         const p = document.getElementById('statusMsg');
-        p.textContent = 'Confirmed. Credits are now available.';
+        if (p) p.textContent = 'Confirmed. Credits are now available.';
         break;
       }
     } catch (e) {

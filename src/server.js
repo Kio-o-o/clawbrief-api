@@ -56,7 +56,28 @@ app.addHook('onResponse', async (req, reply) => {
 
 // Rate limit (per key): protects costs.
 const rateLimit = require('@fastify/rate-limit');
-const { getLimitsForKey } = require('./rate');
+const { getLimitsForReq } = require('./rate');
+
+// In DB mode: validate API keys early so attackers can't bypass limits by spraying random Bearer tokens.
+app.addHook('onRequest', async (req) => {
+  req._rateAuthed = false;
+  req._rateKey = null;
+
+  if (!useDb()) return;
+  const plaintext = parseAuth(req);
+  if (!plaintext) return;
+
+  try {
+    const row = await getApiKeyRow(plaintext);
+    if (!row) return;
+
+    req._rateAuthed = true;
+    req._rateKey = `k:${row.id}`;
+  } catch {
+    // ignore
+  }
+});
+
 app.register(rateLimit, {
   global: false,
   addHeaders: {
@@ -64,9 +85,9 @@ app.register(rateLimit, {
     'x-ratelimit-remaining': true,
     'x-ratelimit-reset': true,
   },
-  keyGenerator: (req) => parseAuth(req) || req.ip,
-  max: (req) => getLimitsForKey(parseAuth(req))?.max || 30,
-  timeWindow: (req) => getLimitsForKey(parseAuth(req))?.timeWindow || 10 * 60 * 1000,
+  keyGenerator: (req) => req._rateKey || req.ip,
+  max: (req) => getLimitsForReq(req)?.max ?? 30,
+  timeWindow: (req) => getLimitsForReq(req)?.timeWindow ?? 10 * 60 * 1000,
 });
 
 app.register(multipart, {
