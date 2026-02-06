@@ -38,6 +38,7 @@ const { registerPublicKeysRoutes } = require('./public_keys_routes');
 const { renderTopupPage, qrDataUrl } = require('./topup_page');
 const { renderSignupPage } = require('./signup_page');
 const { renderDashboardPage } = require('./dashboard_page');
+const { renderLandingPage } = require('./landing_page');
 
 initSentry(app);
 registerMonitoringRoutes(app);
@@ -72,6 +73,11 @@ app.register(multipart, {
   limits: {
     fileSize: 12 * 1024 * 1024, // 12MB
   },
+});
+
+app.get('/', async (req, reply) => {
+  reply.header('content-type', 'text/html; charset=utf-8');
+  return renderLandingPage();
 });
 
 app.get('/healthz', async () => ({ ok: true }));
