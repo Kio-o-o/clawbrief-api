@@ -139,7 +139,7 @@ document.getElementById('btn').addEventListener('click', async () => {
 
     const btnDl = document.createElement('button');
     btnDl.textContent='Download backup';
-    btnDl.onclick = () => downloadText('clawbrief_apikey.txt', key + '\n');
+    btnDl.onclick = () => downloadText('clawbrief_apikey.txt', key + "\\n");
 
     const btnTopup = document.createElement('button');
     btnTopup.textContent='Go to Topup';
