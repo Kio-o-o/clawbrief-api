@@ -208,4 +208,64 @@ async function makeBrief({ model, text }) {
   return { ...heuristicBrief(text), _provider: 'heuristic' };
 }
 
-module.exports = { makeBrief };
+async function geminiExtractTextFromImage({ model, buf, mimetype }) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+
+  const m = model || process.env.GEMINI_VISION_MODEL || process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+
+  const sys = [
+    'Extract text from the provided image.',
+    'Return ONLY the extracted text as plain text.',
+    'Do not add commentary, markdown, or code fences.',
+    'If there is no readable text, return an empty string.',
+  ].join('\n');
+
+  const body = {
+    contents: [
+      {
+        role: 'user',
+        parts: [
+          { text: sys },
+          {
+            inlineData: {
+              mimeType: mimetype || 'image/png',
+              data: Buffer.from(buf).toString('base64'),
+            },
+          },
+        ],
+      },
+    ],
+    generationConfig: {
+      temperature: 0,
+      maxOutputTokens: 3000,
+      responseMimeType: 'text/plain',
+    },
+  };
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent?key=${apiKey}`;
+  const r = await request(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const j = await r.body.json();
+
+  const raw = (j.candidates?.[0]?.content?.parts?.map((p) => p.text).filter(Boolean).join('\n') || '').trim();
+  if (process.env.LLM_DEBUG) {
+    console.error('[llm] gemini vision raw preview:', raw.slice(0, 180).replace(/\r/g, '\\r').replace(/\n/g, '\\n'));
+  }
+  return raw;
+}
+
+async function extractTextFromImage({ model, buf, mimetype }) {
+  try {
+    const t = await geminiExtractTextFromImage({ model, buf, mimetype });
+    if (t !== null) return { text: t, _provider: 'gemini' };
+  } catch (e) {
+    if (process.env.LLM_DEBUG) console.error('[llm] gemini vision failed:', String(e?.message || e).slice(0, 240));
+  }
+  return { text: null, _provider: null };
+}
+
+module.exports = { makeBrief, extractTextFromImage };

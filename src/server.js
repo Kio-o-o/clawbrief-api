@@ -18,7 +18,7 @@ const { z } = require('zod');
 const { fetchUrlText } = require('./extract');
 const { ocrImageToText } = require('./ocr');
 const { detectRiskFlags } = require('./risk');
-const { makeBrief } = require('./llm');
+const { makeBrief, extractTextFromImage } = require('./llm');
 const { requireAdmin } = require('./admin');
 const { registerMonitoringRoutes } = require('./monitoring_routes');
 const { initSentry } = require('./sentry');
@@ -348,12 +348,20 @@ app.post('/v1/brief', { config: { rateLimit: true } }, async (req, reply) => {
         return { error: 'empty_pdf', message: 'PDF extracted to empty text' };
       }
     } else if (mimetype.startsWith('image/')) {
-      rawText = await ocrBuffer(buf, mimetype);
       // best-effort pixels count
       try {
         const m = await sharp(buf, { failOn: 'none' }).metadata();
         if (m?.width && m?.height) imageMeta = { pixels: m.width * m.height, width: m.width, height: m.height };
       } catch {}
+
+      // Prefer Gemini Vision OCR (works on Render). Fall back to local tesseract when available.
+      const vision = await extractTextFromImage({ buf, mimetype });
+      if (vision?.text != null) {
+        rawText = vision.text;
+      } else {
+        rawText = await ocrBuffer(buf, mimetype);
+      }
+
       if (!rawText) {
         reply.code(400);
         return { error: 'empty_ocr', message: 'OCR extracted empty text' };
